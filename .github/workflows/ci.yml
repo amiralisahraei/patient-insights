@@ -1,16 +1,18 @@
-name: CI Pipeline
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ master, main ]
+    branches: [ main, master ]
   pull_request:
-    branches: [ master, main ]
+    branches: [ main, master ]
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
-
+    name: Build and test with databases
+    
     services:
+      # PostgreSQL Service
       postgres:
         image: postgres:13
         env:
@@ -20,29 +22,42 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd="pg_isready -U myuser" 
-          --health-interval=10s 
-          --health-timeout=5s 
-          --health-retries=5
+          --health-cmd pg_isready -U myuser
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+          
+      # MongoDB Service
+      mongodb:
+        image: mongo:6
+        ports:
+          - 27017:27017
+        env:
+          MONGO_INITDB_ROOT_USERNAME: root
+          MONGO_INITDB_ROOT_PASSWORD: example
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.11'
+        cache: 'pip'
 
-    - name: Install dependencies
+    - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Test Docker build
-      run: |
-        docker compose build
+    - name: Build Docker containers
+      run: docker compose build
 
-    # Optional: run your etl inside CI
-    - name: Run ETL script inside container
-      run: |
-        docker compose run --rm app python -m app.etl
+    - name: Run ETL (Optional)
+      run: docker compose run --rm app python -m app.etl
