@@ -12,7 +12,7 @@ jobs:
     name: Build and test with databases
     
     services:
-      # PostgreSQL Service
+      # PostgreSQL Service (fixed health check)
       postgres:
         image: postgres:13
         env:
@@ -22,12 +22,12 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready -U myuser
+          --health-cmd "pg_isready -U myuser -d mydb"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
           
-      # MongoDB Service
+      # MongoDB Service (fixed health check)
       mongodb:
         image: mongo:6
         ports:
@@ -36,7 +36,7 @@ jobs:
           MONGO_INITDB_ROOT_USERNAME: root
           MONGO_INITDB_ROOT_PASSWORD: example
         options: >-
-          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'"
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok'"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
