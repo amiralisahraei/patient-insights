@@ -5,3 +5,6 @@ psycopg2-binary
 pymongo
 graphene
 starlette-graphene3
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
