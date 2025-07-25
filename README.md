@@ -52,7 +52,7 @@ A FastAPI application with JWT authentication that manages patient data using Po
 
 ### Option 1: Ansible Deployment (Recommended for Production)
 
-Deploy the application easily on your own server (e.g., AWS EC2) using Ansible automation.
+Deploy the application easily on your own server (e.g., AWS EC2) using Ansible automation. The deployment can be done locally or automated through GitHub Actions CI/CD.
 
 #### Prerequisites for Ansible Deployment
 
@@ -71,10 +71,34 @@ your-server ansible_host=YOUR_SERVER_IP ansible_user=ubuntu ansible_ssh_private_
 
 #### 2. Deploy with Ansible
 
+**Local Deployment:**
 ```bash
-# Deploy the application
+# Deploy the application locally
 ansible-playbook -i ansible/inventory.ini ansible/deploy.yml
 ```
+
+**Automated Deployment with GitHub Actions:**
+
+The project includes automated CI/CD deployment using GitHub Actions. The deployment is triggered automatically on:
+- Push to `main` or `master` branch
+- Pull requests to `main` or `master` branch
+
+To set up automated deployment:
+
+1. **Add SSH Private Key to GitHub Secrets:**
+   - Go to your repository Settings → Secrets and variables → Actions
+   - Add a new secret named `SSH_PRIVATE_KEY`
+   - Paste your private SSH key content
+
+2. **Push to main/master branch:**
+   ```bash
+   git push origin main
+   ```
+
+The GitHub Action will automatically:
+- Set up Python and install Ansible
+- Configure SSH authentication
+- Run the Ansible playbook to deploy your application
 
 #### 3. Access Your Application
 
@@ -383,3 +407,4 @@ The application includes health check endpoints:
    # Update system packages
    ansible-playbook -i ansible/inventory.ini ansible/deploy.yml --tags "system"
    ```
+
