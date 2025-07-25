@@ -1,0 +1,137 @@
+- name: Update apt package index
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Install required packages
+  apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+    state: present
+
+- name: Add Docker’s official GPG key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+
+- name: Set up the Docker stable repository
+  apt_repository:
+    repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    state: present
+    filename: docker
+
+- name: Update apt package index again
+  apt:
+    update_cache: yes
+
+- name: Install Docker Engine
+  apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+    state: latest
+
+- name: Start and enable Docker service
+  systemd:
+    name: docker
+    enabled: yes
+    state: started
+
+- name: Add ubuntu user to docker group
+  user:
+    name: ubuntu
+    groups: docker
+    append: yes
+
+- name: Check Docker version
+  command: docker --version
+  register: docker_version
+
+- name: Show Docker version
+  debug:
+    var: docker_version.stdout
+
+- name: Download Docker Compose binary
+  ansible.builtin.get_url:
+    url: "https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-linux-{{ ansible_architecture }}"
+    dest: /usr/local/bin/docker-compose
+    mode: '0755'
+  register: download_compose
+  retries: 3
+  delay: 5
+
+- name: Verify installation
+  command: docker-compose --version
+  register: compose_check
+  changed_when: false
+
+- name: Show Docker Compose version
+  debug:
+    var: compose_check.stdout
+
+- name: Install unzip and other archive tools
+  apt:
+    name:
+      - unzip
+      - zip
+      - gzip
+      - bzip2
+      - xz-utils
+      - zstd
+    state: present
+    update_cache: yes
+  become: yes
+
+- name: Copy zipped project
+  copy:
+    src: /home/amirali/workplace/patients_insights/patient-insights/project.zip
+    dest: /home/ubuntu/project.zip
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644'
+  become: yes  # Needed if copying from local to remote
+
+- name: Ensure myapp directory exists
+  file:
+    path: /home/ubuntu/myapp
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+    mode: '0755'
+  become: yes  # Needed to create directory as root then change owner
+
+- name: Unarchive the project
+  unarchive:
+    src: /home/ubuntu/project.zip
+    dest: /home/ubuntu/myapp/
+    remote_src: yes  # Correct - file is on remote machine
+    owner: ubuntu
+    group: ubuntu
+    creates: /home/ubuntu/myapp/README.md  # Add a file that indicates successful extraction
+  become: yes
+
+- name: Remove the zipped project file
+  file: 
+    path: /home/ubuntu/project.zip
+    state: absent
+  become: yes  
+
+- name: Start PostgreSQL and MonongDB on containers
+  command: docker-compose up -d mongo db
+  args:
+    chdir: /home/ubuntu/myapp  # Ensure the command runs in the correct directory
+
+- name: Run ETL file
+  command: docker-compose run --rm app python -m app.etl
+  args:
+    chdir: /home/ubuntu/myapp   
+
+- name: Start the Application
+  command: docker-compose up -d app
+  args:
+    chdir: /home/ubuntu/myapp   
