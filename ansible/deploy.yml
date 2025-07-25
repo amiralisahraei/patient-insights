@@ -1,6 +1,10 @@
 - name: Deploy app to EC2
   hosts: web
+  vars:
+    project_dir: /home/amirali/workplace/patients_insights/patient-insights
   become: yes
 
   roles:
     - app
+  
+  
