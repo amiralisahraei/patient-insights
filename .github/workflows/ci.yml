@@ -1,63 +1,31 @@
 name: CI/CD Pipeline
 
-# on:
-#   push:
-#     branches: [ main, master ]
-#   pull_request:
-#     branches: [ main, master ]
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
 
 jobs:
-  build-and-test:
+  ansible-deploy:
     runs-on: ubuntu-latest
-    name: Build and test with databases
-    
-    services:
-      # PostgreSQL Service (fixed health check)
-      postgres:
-        image: postgres:13
-        env:
-          POSTGRES_USER: myuser
-          POSTGRES_PASSWORD: mypassword
-          POSTGRES_DB: mydb
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U myuser -d mydb"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-          
-      # MongoDB Service (fixed health check)
-      mongodb:
-        image: mongo:6
-        ports:
-          - 27017:27017
-        env:
-          MONGO_INITDB_ROOT_USERNAME: root
-          MONGO_INITDB_ROOT_PASSWORD: example
-        options: >-
-          --health-cmd "mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok'"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-        cache: 'pip'
+      - name: Set up Python and install Ansible
+        run: |
+          python -m pip install --upgrade pip
+          pip install ansible
 
-    - name: Install Python dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
 
-    - name: Build Docker containers
-      run: docker compose build
-
-    - name: Run ETL (Optional)
-      run: docker compose run --rm app python -m app.etl
+      - name: Run Ansible Playbook
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: 'False'
+        run: |
+          ansible-playbook ansible/deploy.yml -i ansible/inventory.ini
