@@ -89,7 +89,7 @@
 
 - name: Copy zipped project
   copy:
-    src: project.zip
+    src: "{{ ansible_env.GITHUB_WORKSPACE }}/project.zip"
     dest: /home/ubuntu/project.zip
     owner: ubuntu
     group: ubuntu
