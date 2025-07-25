@@ -90,7 +90,7 @@
 - name: Zip the project directory, excluding __pycache__
   command: zip -r project.zip * -x app/__pycache__/*
   args:
-    chdir: {{ project_dir }}  # Replace with your project directory on EC2
+    chdir: "{{ project_dir }}"  # Replace with your project directory on EC2
 
 
 - name: Copy zipped project
