@@ -23,6 +23,10 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
+      
+      - name: Zip the repository
+        run: |
+          zip -r project.zip . -x "*.git*" "*/__pycache__/*" "*.pyc" "node_modules/*"
 
       - name: Run Ansible Playbook
         env:
