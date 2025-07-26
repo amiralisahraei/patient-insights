@@ -87,11 +87,19 @@
     update_cache: yes
   become: yes
 
-- name: Zip the project directory, excluding __pycache__
-  command: zip -r project.zip ../* 
-  args:
-    chdir: /home/ubuntu  # Replace with your project directory on EC2
+# - name: Zip the project directory, excluding __pycache__
+#   command: zip -r project.zip ../* 
+#   args:
+#     chdir: /home/ubuntu  # Replace with your project directory on EC2
 
+# - name: Zip the project directory, excluding __pycache__
+#   archive:
+#     path: /path/to/your/project  # Replace with actual project path
+#     dest: /home/ubuntu/project.zip
+#     format: zip
+#     exclude_path:
+#       - "**/__pycache__"
+#       - "**/*.pyc"
 
 - name: Copy zipped project
   copy:
