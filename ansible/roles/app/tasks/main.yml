@@ -87,20 +87,6 @@
     update_cache: yes
   become: yes
 
-# - name: Zip the project directory, excluding __pycache__
-#   command: zip -r project.zip ../* 
-#   args:
-#     chdir: /home/ubuntu  # Replace with your project directory on EC2
-
-# - name: Zip the project directory, excluding __pycache__
-#   archive:
-#     path: /path/to/your/project  # Replace with actual project path
-#     dest: /home/ubuntu/project.zip
-#     format: zip
-#     exclude_path:
-#       - "**/__pycache__"
-#       - "**/*.pyc"
-
 - name: Copy zipped project
   copy:
     src: "../project.zip"
@@ -108,7 +94,7 @@
     owner: ubuntu
     group: ubuntu
     mode: '0644'
-  become: yes  # Needed if copying from local to remote
+  become: yes  
 
 - name: Ensure myapp directory exists
   file:
@@ -117,16 +103,16 @@
     owner: ubuntu
     group: ubuntu
     mode: '0755'
-  become: yes  # Needed to create directory as root then change owner
+  become: yes  
 
 - name: Unarchive the project
   unarchive:
     src: /home/ubuntu/project.zip
     dest: /home/ubuntu/myapp/
-    remote_src: yes  # Correct - file is on remote machine
+    remote_src: yes # Indicates that the source file is already on the remote machine 
     owner: ubuntu
     group: ubuntu
-    creates: /home/ubuntu/myapp/README.md  # Add a file that indicates successful extraction
+    creates: /home/ubuntu/myapp/README.md  
   become: yes
 
 - name: Remove the zipped project file
@@ -138,7 +124,7 @@
 - name: Start PostgreSQL and MonongDB on containers
   command: docker-compose up -d mongo db
   args:
-    chdir: /home/ubuntu/myapp  # Ensure the command runs in the correct directory
+    chdir: /home/ubuntu/myapp 
 
 - name: Run ETL file
   command: docker-compose run --rm app python -m app.etl
